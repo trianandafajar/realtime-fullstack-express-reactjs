@@ -64,13 +64,13 @@ const Home = () => {
                       <td className="py-3 px-1 text-center">
                         <Link
                           to={`/edit/${product.id}`}
-                          className="font-medium bg-blue-400 hover:bg-blue-500 px-3 py-1 rounded text-white mr-1"
+                          className="font-medium bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-white mr-1"
                         >
                           Edit
                         </Link>
                         <button
                           onClick={() => delProduct(product.id)}
-                          className="font-medium bg-red-400 hover:bg-red-500 px-3 py-1 rounded text-white"
+                          className="font-medium bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white"
                         >
                           Delete
                         </button>
