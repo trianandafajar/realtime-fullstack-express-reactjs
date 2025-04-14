@@ -7,28 +7,56 @@ const AddProduct = () => {
   const [name, setName] = useState("");
   const [qty, setQty] = useState("");
   const [price, setPrice] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const saveProduct = async (e) => {
     e.preventDefault();
-    const product = { name, qty, price };
+
+    // Validasi input
+    if (!name || qty <= 0 || price <= 0) {
+      return Swal.fire({
+        title: "Validation Error",
+        text: "Please fill in all fields correctly.",
+        icon: "warning",
+      });
+    }
+
+    const product = {
+      name,
+      qty: Number(qty),
+      price: Number(price),
+    };
+
     try {
+      setLoading(true);
       const data = await inputProduct(product);
+      setLoading(false);
       if (data) {
         Swal.fire({
           title: "Success!",
           text: "Product has been added",
           icon: "success",
         });
+        // Reset form
+        setName("");
+        setQty("");
+        setPrice("");
         navigate("/");
       }
     } catch (error) {
+      setLoading(false);
       Swal.fire({
         title: "Error!",
-        text: error,
+        text:
+          error?.response?.data?.message ||
+          error.message ||
+          "Something went wrong.",
         icon: "error",
       });
     }
   };
+
   return (
     <div className="max-w-lg mx-auto my-10 bg-white p-8 rounded-xl shadow shadow-slate-300">
       <form onSubmit={saveProduct} className="my-10">
@@ -69,8 +97,9 @@ const AddProduct = () => {
           <button
             type="submit"
             className="w-full py-3 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg"
+            disabled={loading}
           >
-            Submit
+            {loading ? "Saving..." : "Submit"}
           </button>
         </div>
       </form>
