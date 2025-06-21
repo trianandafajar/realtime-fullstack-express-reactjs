@@ -1,35 +1,52 @@
 import winston from "winston";
 import "winston-daily-rotate-file";
 
-const transport = new winston.transports.DailyRotateFile({
+// Custom format untuk log yang lebih ringan
+const customFormat = winston.format.printf(({ level, message, timestamp, label }) => {
+  return `${timestamp} [${label}] ${level.toUpperCase()}: ${message}`;
+});
+
+// Transport untuk file dengan rotasi harian
+const fileTransport = new winston.transports.DailyRotateFile({
   filename: "./logs/app-%DATE%.log",
   datePattern: "YYYY-MM-DD",
   zippedArchive: true,
-  maxSize: "1m",
-  maxFiles: "14d",
-  level: "error",
+  maxSize: "5m", // Meningkatkan ukuran maksimal
+  maxFiles: "7d", // Menyimpan log selama 7 hari saja
+  level: process.env.NODE_ENV === "production" ? "error" : "info",
   handleExceptions: true,
+  handleRejections: true,
+});
+
+// Transport untuk console dengan format yang lebih sederhana
+const consoleTransport = new winston.transports.Console({
+  level: process.env.NODE_ENV === "production" ? "error" : "debug",
+  handleExceptions: true,
+  handleRejections: true,
+  format: winston.format.combine(
+    winston.format.colorize({ all: true }),
+    winston.format.simple()
+  ),
 });
 
 export const logger = winston.createLogger({
-  level: "silly",
+  level: process.env.NODE_ENV === "production" ? "error" : "debug",
   format: winston.format.combine(
-    winston.format.json({ space: 2 }),
     winston.format.timestamp({
-      format: "YYYY-MM-DD hh:mm:ss.SSS A",
+      format: "YYYY-MM-DD HH:mm:ss",
     }),
-    winston.format.label({ label: "[LOGGER]" }),
-    winston.format.printf(
-      (info) =>
-        ` ${info.label} ${info.timestamp} ${info.level} : ${info.message}`
-    )
+    winston.format.label({ label: "APP" }),
+    winston.format.errors({ stack: true }),
+    customFormat
   ),
-  transports: [
-    new winston.transports.Console({
-      level: "silly",
-      handleExceptions: true,
-      format: winston.format.combine(winston.format.colorize({ all: true })),
-    }),
-    transport,
-  ],
+  transports: [consoleTransport, fileTransport],
+  exitOnError: false,
+});
+
+// Graceful shutdown untuk logger
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  logger.close(() => {
+    process.exit(0);
+  });
 });
